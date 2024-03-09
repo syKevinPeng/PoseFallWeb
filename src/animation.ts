@@ -55,6 +55,7 @@ export function animation() {
       if (lastAction != null) lastAction.fadeOut(1);
       activeAction.reset();
       activeAction.fadeIn(1);
+      console.log("will play");
       activeAction.play();
     }
   };
@@ -67,7 +68,7 @@ export function animation() {
   const fbxLoader: FBXLoader = new FBXLoader();
 
   fbxLoader.load(
-    "fbx_files/test_model.fbx",
+    "fbx_files/female_model.fbx",
     (object) => {
       if (!(object instanceof THREE.Object3D)) return;
       console.log("loaded test_model");
@@ -78,7 +79,7 @@ export function animation() {
       object.animations.map((animation, i) => {
         const animationAction = mixer.clipAction(animation);
         animationActions.push(animationAction);
-        const propname = `test_model ${i}`;
+        const propname = `female_model ${i}`;
         animations[propname] = function () {
           setAction(animationAction);
         };
@@ -90,19 +91,23 @@ export function animation() {
 
       //add an animation from another file
       fbxLoader.load(
-        "fbx_files/test_bone.fbx",
+        "fbx_files/test_animation.fbx",
         (object) => {
           if (!(object instanceof THREE.Object3D)) return;
           console.log("loaded test_bone");
 
           object.animations.map((animation, i) => {
             const animationAction = mixer.clipAction(animation);
-            const propname = `test_bone ${i}`;
+            animationActions.push(animationAction);
+            const propname = `test_animation ${i}`;
+            console.log(animation);
             animations[propname] = function () {
               setAction(animationAction);
             };
             animationsFolder.add(animations, propname);
           });
+
+          modelReady = true;
 
           //   //add an animation from another file
           //   fbxLoader.load(
