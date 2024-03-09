@@ -3,8 +3,18 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
 import Stats from "three/examples/jsm/libs/stats.module";
 import { GUI } from "dat.gui";
+import {
+  activeAction as activeActionApp,
+  setActiveAction as setActiveActionApp,
+} from "./App";
 
-export function animation() {
+export function animation(
+  gui: GUI,
+  activeAction: typeof activeActionApp,
+  setActiveAction: typeof setActiveActionApp
+) {
+  console.log(animation.name, "fn begin!");
+
   const scene = new THREE.Scene();
   scene.add(new THREE.AxesHelper(5));
 
@@ -22,7 +32,7 @@ export function animation() {
 
   const renderer = new THREE.WebGLRenderer();
   renderer.setSize(window.innerWidth, window.innerHeight);
-  document.body.appendChild(renderer.domElement);
+  document.getElementById("threejs")!.appendChild(renderer.domElement);
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
@@ -45,26 +55,28 @@ export function animation() {
 
   const setAction = (toAction: THREE.AnimationAction) => {
     console.log(
-      `setAction: to=${toAction} active=${activeAction} last=${lastAction}`
+      `setAction: to=${toAction} active=${activeAction()} last=${lastAction}`
     );
 
-    if (toAction != activeAction) {
-      lastAction = activeAction;
-      activeAction = toAction;
+    if (!modelReady) throw new Error("Model not ready!!!!!");
+
+    if (toAction != activeAction()) {
+      lastAction = activeAction();
+      setActiveAction(toAction);
       //lastAction.stop()
-      if (lastAction != null) lastAction.fadeOut(1);
-      activeAction.reset();
-      activeAction.fadeIn(1);
+      lastAction?.fadeOut(1);
+      activeAction()?.reset();
+      activeAction()?.fadeIn(1);
       console.log("will play");
-      activeAction.play();
+      activeAction()?.play();
     }
   };
 
   let mixer: THREE.AnimationMixer;
   let modelReady = false;
   const animationActions: THREE.AnimationAction[] = [];
-  let activeAction: THREE.AnimationAction;
-  let lastAction: THREE.AnimationAction;
+  // let activeAction: THREE.AnimationAction;
+  let lastAction: THREE.AnimationAction | undefined;
   const fbxLoader: FBXLoader = new FBXLoader();
 
   fbxLoader.load(
@@ -84,7 +96,7 @@ export function animation() {
           setAction(animationAction);
         };
         animationsFolder.add(animations, propname);
-        if (i === 0 || lastAction == null) activeAction = animationActions[0];
+        if (i === 0 || lastAction == null) setActiveAction(animationActions[0]);
       });
 
       scene.add(object);
@@ -176,9 +188,8 @@ export function animation() {
   }
 
   const stats = new Stats();
-  document.body.appendChild(stats.dom);
+  document.getElementById("threejs")!.appendChild(stats.dom);
 
-  const gui = new GUI();
   const animationsFolder = gui.addFolder("Animations");
   animationsFolder.open();
 
