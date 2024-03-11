@@ -234,7 +234,9 @@ export function Animation(props: {
           object.scale.set(0.01, 0.01, 0.01);
           mixer = new THREE.AnimationMixer(object);
 
-          object.animations.map((anim, i) => processAnimations(anim, i));
+          object.animations.map((anim, i) =>
+            processAnimations(anim, i, "Model")
+          );
 
           lastObjectsInScene.push(object);
           scene.add(object);
