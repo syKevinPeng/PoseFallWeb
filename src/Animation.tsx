@@ -4,15 +4,22 @@ import { createEffect, createSignal, onCleanup } from "solid-js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
 import Stats from "three/examples/jsm/libs/stats.module";
-import { GUI } from "dat.gui";
+import { untrack } from "solid-js/web";
+import { CirclePause, CirclePlay } from "lucide-solid";
 
-export const [activeAction, setActiveAction_] =
-  createSignal<THREE.AnimationAction>();
-export const [activeActionPaused, setActiveActionPaused] = createSignal(true);
+const [activeActionPaused, setActiveActionPaused] = createSignal(true);
+export const [activeActionAnims, setActiveActionAnims] = createSignal<
+  {
+    name: string;
+    anim: THREE.AnimationAction;
+    callback: () => void;
+  }[]
+>([]);
 
-export function setActiveAction(action: THREE.AnimationAction) {
+const [activeAction, setActiveAction_] = createSignal<THREE.AnimationAction>();
+function setActiveAction(action?: THREE.AnimationAction) {
   setActiveAction_(action);
-  setActiveActionPaused(action.paused);
+  setActiveActionPaused(action?.paused ?? true);
 }
 
 export function Animation(props: {
@@ -20,14 +27,11 @@ export function Animation(props: {
   model: string;
   anims?: string[];
 }) {
+  const [time, setTime] = createSignal(0);
+  const [duration, setDuration] = createSignal(0);
+
   let statsRef: HTMLDivElement | undefined;
-  let guiRef: HTMLDivElement | undefined;
   let rendererRef: HTMLDivElement | undefined;
-  const [guiInfoS, setGuiInfo] = createSignal<{
-    gui: GUI;
-    modelsFolder: GUI;
-    animationsFolder: GUI;
-  }>();
 
   //
   //
@@ -46,18 +50,40 @@ export function Animation(props: {
   //
   createEffect(() => {
     props.name; // do not remove
+    setActiveAction();
+    setActiveActionAnims([]);
+  });
 
-    const gui = new GUI({ autoPlace: false });
-    const modelsFolder = gui.addFolder("Models");
-    const animationsFolder = gui.addFolder("Animations");
-    setGuiInfo({ gui, modelsFolder, animationsFolder });
+  //
+  //
+  //
+  createEffect(() => {
+    const dur = activeAction()?.getClip().duration;
+    if (dur != null && dur > 1) {
+      setDuration(dur);
 
-    modelsFolder.open();
-    animationsFolder.open();
-    gui.domElement.style.position = "absolute";
-    gui.domElement.style.right = "0";
+      let stop = false;
+      function updTime() {
+        if (stop || duration() === 0) return;
+        requestAnimationFrame(updTime);
+        // console.log(
+        //   "activeAction()?.time",
+        //   activeAction()?.time,
+        //   activeAction()?.getClip().duration
+        // );
+        setTime(activeAction()?.time || 0);
+      }
+      updTime();
 
-    guiRef?.replaceChildren(gui.domElement);
+      return () => {
+        stop = true;
+      };
+      //
+      //
+    } else {
+      setDuration(0);
+      setTime(0);
+    }
   });
 
   //
@@ -68,11 +94,9 @@ export function Animation(props: {
     console.log(`Loading ${props.name}!`);
 
     const lastObjectsInScene: THREE.Object3D[] = [];
-    const lastAnimActions: THREE.AnimationAction[] = [];
     let modelReady = false;
 
     let mixer: THREE.AnimationMixer | undefined;
-    let animationCallbacks: { [key: string]: () => void } = {};
     let lastAction: THREE.AnimationAction | undefined;
 
     const scene = new THREE.Scene();
@@ -164,14 +188,43 @@ export function Animation(props: {
 
       mixer?.uncacheRoot(mixer.getRoot());
       mixer?.stopAllAction();
-      lastAnimActions.forEach((x) => {
-        x.stop();
-        mixer?.uncacheClip(x.getClip());
-        mixer?.uncacheAction(x.getClip());
+      untrack(() => {
+        activeActionAnims().forEach((x) => {
+          x.anim.stop();
+          mixer?.uncacheClip(x.anim.getClip());
+          mixer?.uncacheAction(x.anim.getClip());
+        });
       });
-      animationCallbacks = {};
 
       const fbxLoader: FBXLoader = new FBXLoader();
+
+      function processAnimations(
+        animation: THREE.AnimationClip,
+        i: number,
+        notes?: string
+      ) {
+        {
+          if (mixer == null) {
+            alert("Mixer not ready!!!!!");
+            throw new Error("Mixer not ready!!!!!");
+          }
+          const propname =
+            name +
+            (notes != null ? ` ${notes}` : "") +
+            (i != 0 ? ` ${i + 1}` : "");
+          const animationAction = mixer.clipAction(animation);
+          setActiveActionAnims((x) => [
+            ...x,
+            {
+              name: propname,
+              anim: animationAction,
+              callback: () => {
+                setAction(animationAction);
+              },
+            },
+          ]);
+        }
+      }
 
       fbxLoader.load(
         model,
@@ -181,21 +234,7 @@ export function Animation(props: {
           object.scale.set(0.01, 0.01, 0.01);
           mixer = new THREE.AnimationMixer(object);
 
-          object.animations.map((animation, i) => {
-            if (mixer == null) {
-              alert("Mixer not ready!!!!!");
-              throw new Error("Mixer not ready!!!!!");
-            }
-            const animationAction = mixer.clipAction(animation);
-            lastAnimActions.push(animationAction);
-
-            const propname = name + (i != 0 ? ` ${i + 1}` : "");
-            animationCallbacks[propname] = function () {
-              setAction(animationAction);
-            };
-            guiInfoS()?.modelsFolder.add(animationCallbacks, propname);
-            // if (i === 0 || lastAction == null) setActiveAction(animationActions[0]);
-          });
+          object.animations.map((anim, i) => processAnimations(anim, i));
 
           lastObjectsInScene.push(object);
           scene.add(object);
@@ -206,24 +245,9 @@ export function Animation(props: {
               (object) => {
                 if (!(object instanceof THREE.Object3D)) return;
 
-                object.animations.map((animation, i) => {
-                  if (mixer == null) {
-                    alert("Mixer not ready!!!!!");
-                    throw new Error("Mixer not ready!!!!!");
-                  }
-                  const animationAction = mixer.clipAction(animation);
-                  lastAnimActions.push(animationAction);
-
-                  const propname =
-                    `${name} Animation` + (i != 0 ? ` ${i + 1}` : "");
-                  animationCallbacks[propname] = function () {
-                    setAction(animationAction);
-                  };
-                  guiInfoS()?.animationsFolder.add(
-                    animationCallbacks,
-                    propname
-                  );
-                });
+                object.animations.map((anim, i) =>
+                  processAnimations(anim, i, "Anim")
+                );
 
                 lastObjectsInScene.push(object);
               },
@@ -264,10 +288,85 @@ export function Animation(props: {
   });
 
   return (
-    <div style={{ flex: 1, display: "flex", position: "relative" }}>
-      <div ref={statsRef} style={{ position: "relative" }} />
-      <div ref={guiRef} />
-      <div ref={rendererRef} style={{ flex: 1 }} />
+    <div
+      style={{
+        flex: 1,
+        // display: "flex",
+        // "flex-direction": "column",
+        // "align-items": "center",
+        position: "relative",
+      }}
+    >
+      {activeAction() != null && duration() > 0 && (
+        <div
+          id="controls"
+          style={{
+            width: "100%",
+            margin: "auto",
+            position: "absolute",
+            bottom: "10%",
+            display: "flex",
+            "align-items": "center",
+            "justify-content": "center",
+            "column-gap": ".3rem",
+            "z-index": 100,
+            "background-color": "rgba(0, 0, 0, 0.2)",
+          }}
+        >
+          {activeActionPaused() ? (
+            <CirclePlay
+              color="white"
+              onClick={() => {
+                const _activeAction = activeAction();
+                if (_activeAction) {
+                  _activeAction.paused = !_activeAction.paused;
+                  setActiveActionPaused(false);
+                }
+              }}
+            />
+          ) : (
+            <CirclePause
+              color="white"
+              onClick={() => {
+                const _activeAction = activeAction();
+                if (_activeAction) {
+                  _activeAction.paused = !_activeAction.paused;
+                  setActiveActionPaused(true);
+                }
+              }}
+            />
+          )}
+          <pre
+            style={{
+              display: "inline-block",
+              "flex-basis": "3rem",
+              color: "white",
+            }}
+          >
+            {(Math.round(time() * 100) / 100).toFixed(2)}/
+            {(Math.round(duration() * 100) / 100).toFixed(2)}
+          </pre>
+          <input
+            type="range"
+            min="0"
+            max={duration()}
+            step="0.01"
+            style={{ width: "30%" }}
+            value={time()}
+            onInput={(e) => {
+              console.log("e.currentTarget.value", e.currentTarget.value);
+              const _activeAction = activeAction();
+              if (_activeAction) _activeAction.time = +e.currentTarget.value;
+            }}
+          />
+        </div>
+      )}
+      <div
+        id="stats"
+        ref={statsRef}
+        style={{ position: "absolute", bottom: 0 }}
+      />
+      <div id="renderer" ref={rendererRef} style={{ height: "100%" }} />
     </div>
   );
 }
