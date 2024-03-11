@@ -1,6 +1,7 @@
-import { createSignal, Index } from "solid-js";
+import { createSignal, For, Index } from "solid-js";
 
 import { Animation, activeActionAnims } from "./Animation";
+import { Loader2 } from "lucide-solid";
 
 const modelAnims = [
   {
@@ -27,24 +28,50 @@ export function App() {
       }}
     >
       <div style={{ "flex-basis": "20%" }}>
-        <div style={{ display: "flex", "justify-content": "center" }}>
-          {modelAnims.map((x) => (
-            <button
-              onClick={() => {
-                setModelAnim(x);
-              }}
-            >
-              {x.name}
-            </button>
-          ))}
+        <div
+          style={{
+            display: "flex",
+            "flex-flow": "column",
+            "align-items": "center",
+          }}
+        >
+          <h1>Select Models</h1>
+          <For each={modelAnims} fallback={<Loading />}>
+            {(model, i) => (
+              <button
+                style={{ width: "80%", height: "3rem" }}
+                onClick={() => {
+                  setModelAnim(model);
+                }}
+              >
+                {model.name}
+              </button>
+            )}
+          </For>
         </div>
-        <Index each={activeActionAnims()} fallback={<div>loading...</div>}>
-          {(anim, i) => (
-            <button onClick={anim().callback}>{anim().name}</button>
-          )}
-        </Index>
+        <div
+          style={{
+            display: "flex",
+            "flex-flow": "column",
+            "align-items": "center",
+          }}
+        >
+          <h1>Select Animation</h1>
+          <For each={activeActionAnims()} fallback={<Loading />}>
+            {(anim, i) => (
+              <button
+                style={{ width: "80%", height: "3rem" }}
+                onClick={anim.callback}
+              >
+                {anim.name}
+              </button>
+            )}
+          </For>
+        </div>
       </div>
       <Animation {...modelAnim()} />
     </div>
   );
 }
+
+const Loading = () => <Loader2 class="animate-spin" />;
