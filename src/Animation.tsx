@@ -6,8 +6,14 @@ import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
 import Stats from "three/examples/jsm/libs/stats.module";
 import { GUI } from "dat.gui";
 
-export const [activeAction, setActiveAction] =
+export const [activeAction, setActiveAction_] =
   createSignal<THREE.AnimationAction>();
+export const [activeActionPaused, setActiveActionPaused] = createSignal(true);
+
+export function setActiveAction(action: THREE.AnimationAction) {
+  setActiveAction_(action);
+  setActiveActionPaused(action.paused);
+}
 
 export function Animation(props: {
   name: string;
@@ -27,7 +33,10 @@ export function Animation(props: {
   //
   //
   const stats = new Stats();
+  stats.dom.style.height = "100%";
   stats.dom.style.position = "absolute";
+  stats.dom.style.display = "flex";
+  stats.dom.style.flexDirection = "column-reverse";
   createEffect(() => {
     statsRef?.replaceChildren(stats.dom);
   });
@@ -249,7 +258,7 @@ export function Animation(props: {
         activeAction()?.reset();
         activeAction()?.fadeIn(1);
         activeAction()?.play();
-        lastAction?.stop();
+        // lastAction?.stop();
       }
     }
   });
@@ -257,7 +266,7 @@ export function Animation(props: {
   return (
     <div style={{ flex: 1, display: "flex", position: "relative" }}>
       <div ref={statsRef} style={{ position: "relative" }} />
-      <div ref={guiRef}  />
+      <div ref={guiRef} />
       <div ref={rendererRef} style={{ flex: 1 }} />
     </div>
   );

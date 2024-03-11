@@ -1,6 +1,12 @@
-import { createSignal, createEffect, Show } from "solid-js";
+import { createSignal, createEffect, Show, Switch, Match } from "solid-js";
 
-import { Animation, activeAction } from "./Animation";
+import {
+  Animation,
+  activeAction,
+  activeActionPaused,
+  setActiveActionPaused,
+} from "./Animation";
+import { CirclePause, CirclePlay } from "lucide-solid";
 
 const modelAnims = [
   {
@@ -69,52 +75,78 @@ export function App() {
           </button>
         ))}
       </div>
-      <div
-        style={{
-          position: "fixed",
-          bottom: "10%",
-          width: "100%",
-          display: "flex",
-          "justify-content": "center",
-          "z-index": 100,
-        }}
-      >
+      {activeAction() != null && (
         <div
           style={{
-            width: "40%",
+            position: "fixed",
+            bottom: "10%",
+            width: "100%",
             display: "flex",
-            margin: "auto",
-            "padding-left": "2rem",
-            "padding-right": "2rem",
-            "column-gap": ".3rem",
-            "background-color": "rgba(0, 0, 0, 0.2)",
+            "justify-content": "center",
+            "z-index": 100,
           }}
         >
-          <pre
+          <div
             style={{
-              display: "inline-block",
-              "flex-basis": "3rem",
-              color: "white",
+              width: "40%",
+              margin: "auto",
+              display: "flex",
+              "align-items": "center",
+              "padding-left": "2rem",
+              "padding-right": "2rem",
+              "column-gap": ".3rem",
+              "background-color": "rgba(0, 0, 0, 0.2)",
             }}
           >
-            {(Math.round(time() * 100) / 100).toFixed(2)}/
-            {(Math.round(duration() * 100) / 100).toFixed(2)}
-          </pre>
-          <input
-            type="range"
-            min="0"
-            max={duration()}
-            step="0.01"
-            style={{ "flex-grow": "1" }}
-            value={time()}
-            onInput={(e) => {
-              console.log("e.currentTarget.value", e.currentTarget.value);
-              const _activeAction = activeAction();
-              if (_activeAction) _activeAction.time = +e.currentTarget.value;
-            }}
-          />
+            {activeActionPaused() ? (
+              <CirclePlay
+                color="white"
+                onClick={() => {
+                  const _activeAction = activeAction();
+                  if (_activeAction) {
+                    _activeAction.paused = !_activeAction.paused;
+                    setActiveActionPaused(false);
+                  }
+                }}
+              />
+            ) : (
+              <CirclePause
+                color="white"
+                onClick={() => {
+                  const _activeAction = activeAction();
+                  if (_activeAction) {
+                    _activeAction.paused = !_activeAction.paused;
+                    setActiveActionPaused(true);
+                  }
+                }}
+              />
+            )}
+            <pre
+              style={{
+                display: "inline-block",
+                "flex-basis": "3rem",
+                color: "white",
+              }}
+            >
+              {(Math.round(time() * 100) / 100).toFixed(2)}/
+              {(Math.round(duration() * 100) / 100).toFixed(2)}
+            </pre>
+            <input
+              type="range"
+              min="0"
+              max={duration()}
+              step="0.01"
+              style={{ "flex-grow": "1" }}
+              value={time()}
+              onInput={(e) => {
+                console.log("e.currentTarget.value", e.currentTarget.value);
+                const _activeAction = activeAction();
+                if (_activeAction) _activeAction.time = +e.currentTarget.value;
+              }}
+            />
+          </div>
         </div>
-      </div>
+      )}
       <Animation {...modelAnim()} />
       {/* 
       
