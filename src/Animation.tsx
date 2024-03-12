@@ -134,7 +134,7 @@ export function Animation(props: {
         rendererRef?.clientHeight ?? Infinity,
         document.body.clientHeight
       );
-      console.log("w", w, "h", h);
+      // console.log("w", w, "h", h);
 
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
@@ -235,7 +235,7 @@ export function Animation(props: {
           mixer = new THREE.AnimationMixer(object);
 
           object.animations.map((anim, i) =>
-            processAnimations(anim, i, "Model")
+            processAnimations(anim, i, "Default")
           );
 
           lastObjectsInScene.push(object);

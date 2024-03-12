@@ -1,6 +1,9 @@
 import { createSignal, For, Index } from "solid-js";
 
-import { Animation, activeActionAnims } from "./Animation";
+import {
+  Animation,
+  activeActionAnims as activeActionAnimsS,
+} from "./Animation";
 import { Loader2 } from "lucide-solid";
 
 const modelAnims = [
@@ -16,7 +19,25 @@ const modelAnims = [
   },
 ];
 
+const dropDownMemu = {
+  "Impact Location": ["Head", "Torso", "Legs", "Arms"],
+  "Impact Attribute": ["Prick", "Contraction", "Explosion", "Shot", "Push"],
+  "Glitch Attribute": [
+    "Shake",
+    "Fail",
+    "Flash",
+    "Stutter",
+    "Short",
+    "Contort",
+    "Stumble",
+    "Spin",
+    "Freeze",
+  ],
+  "Fall Attribute": ["Release", "Let go", "Hinge", "Surrender", "Suspend"],
+};
+
 export function App() {
+  let attribRefs: { [key: string]: HTMLSelectElement } = {};
   const [modelAnim, setModelAnim] = createSignal(modelAnims[0]);
 
   return (
@@ -49,7 +70,60 @@ export function App() {
             )}
           </For>
         </div>
+
         <div
+          style={{
+            display: "flex",
+            "flex-flow": "column",
+            "align-items": "center",
+          }}
+        >
+          <h1>Select Attributes</h1>
+          <For each={Object.entries(dropDownMemu)} fallback={<Loading />}>
+            {([attribName, xs]) => (
+              <>
+                <h2>{attribName}</h2>
+                <select
+                  style={{
+                    width: "80%",
+                    height: "3rem",
+                    "text-align": "center",
+                  }}
+                  ref={(ref) => {
+                    attribRefs[attribName] = ref;
+                  }}
+                >
+                  <For each={xs} fallback={<Loading />}>
+                    {(x) => (
+                      <option
+                        value={x}
+                        // onClick={anim.callback}
+                      >
+                        {x}
+                      </option>
+                    )}
+                  </For>
+                </select>
+              </>
+            )}
+          </For>
+          <button
+            onClick={() => {
+              console.log(
+                Object.entries(attribRefs).map(([k, v]) => ({
+                  [k]: v.value,
+                }))
+              );
+              const activeActionAnims = activeActionAnimsS();
+              if (activeActionAnims)
+                activeActionAnims[activeActionAnims.length - 1].callback();
+            }}
+          >
+            Show
+          </button>
+        </div>
+
+        {/* <div
           style={{
             display: "flex",
             "flex-flow": "column",
@@ -67,7 +141,7 @@ export function App() {
               </button>
             )}
           </For>
-        </div>
+        </div> */}
       </div>
       <Animation {...modelAnim()} />
     </div>
