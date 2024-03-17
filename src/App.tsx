@@ -1,10 +1,27 @@
 import { createSignal, For, Index } from "solid-js";
+import { Loader2 } from "lucide-solid";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import {
   Animation,
   activeActionAnims as activeActionAnimsS,
 } from "./Animation";
-import { Loader2 } from "lucide-solid";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 const modelAnims = [
   {
@@ -37,7 +54,7 @@ const dropDownMemu = {
 };
 
 export function App() {
-  let attribRefs: { [key: string]: HTMLSelectElement } = {};
+  let attribs: { [key: string]: string } = {};
   const [modelAnim, setModelAnim] = createSignal(modelAnims[0]);
 
   return (
@@ -48,101 +65,81 @@ export function App() {
         display: "flex",
       }}
     >
-      <div style={{ "flex-basis": "20%" }}>
-        <div
-          style={{
-            display: "flex",
-            "flex-flow": "column",
-            "align-items": "center",
-          }}
-        >
-          <h1>Select Models</h1>
-          <For each={modelAnims} fallback={<Loading />}>
-            {(model, i) => (
-              <button
-                style={{ width: "80%", height: "3rem" }}
-                onClick={() => {
-                  setModelAnim(model);
-                }}
-              >
-                {model.name}
-              </button>
-            )}
-          </For>
-        </div>
+      <div class="min-w-[22rem] basis-1/5 p-3 [&_h1]:font-bold [&_h1]:text-3xl [&_h1]:text-center">
+        <Card>
+          <CardHeader>
+            <CardTitle>Select Models</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="flex flex-wrap">
+              <For each={modelAnims} fallback={<Loading />}>
+                {(model, i) => (
+                  <div class="basis-1/2 p-1">
+                    <Button
+                      class="w-full"
+                      onClick={() => {
+                        setModelAnim(model);
+                      }}
+                    >
+                      {model.name}
+                    </Button>
+                  </div>
+                )}
+              </For>
+            </div>
+          </CardContent>
+        </Card>
 
-        <div
-          style={{
-            display: "flex",
-            "flex-flow": "column",
-            "align-items": "center",
-          }}
-        >
-          <h1>Select Attributes</h1>
-          <For each={Object.entries(dropDownMemu)} fallback={<Loading />}>
-            {([attribName, xs]) => (
-              <>
-                <h2>{attribName}</h2>
-                <select
-                  style={{
-                    width: "80%",
-                    height: "3rem",
-                    "text-align": "center",
-                  }}
-                  ref={(ref) => {
-                    attribRefs[attribName] = ref;
-                  }}
-                >
-                  <For each={xs} fallback={<Loading />}>
-                    {(x) => (
-                      <option
-                        value={x}
-                        // onClick={anim.callback}
-                      >
-                        {x}
-                      </option>
+        <Card>
+          <CardHeader>
+            <CardTitle>Select Attributes</CardTitle>
+            {/* <CardDescription>Card Description</CardDescription> */}
+          </CardHeader>
+          <CardContent>
+            <For each={Object.entries(dropDownMemu)} fallback={<Loading />}>
+              {([attribName, xs]) => (
+                <>
+                  <div class="py-1 text-sm font-medium">{attribName}</div>
+                  <Select
+                    class="w-full h-12 text-center"
+                    onChange={(x) => {
+                      attribs[attribName] = x;
+                      console.log(x);
+                    }}
+                    options={xs}
+                    placeholder={`Select a ${attribName} ...`}
+                    itemComponent={(props) => (
+                      <SelectItem item={props.item}>
+                        {props.item.rawValue}
+                      </SelectItem>
                     )}
-                  </For>
-                </select>
-              </>
-            )}
-          </For>
-          <button
-            onClick={() => {
-              console.log(
-                Object.entries(attribRefs).map(([k, v]) => ({
-                  [k]: v.value,
-                }))
-              );
-              const activeActionAnims = activeActionAnimsS();
-              if (activeActionAnims)
-                activeActionAnims[activeActionAnims.length - 1].callback();
-            }}
-          >
-            Show
-          </button>
-        </div>
+                  >
+                    <SelectTrigger class="text-center">
+                      <SelectValue<string>>
+                        {(state) => state.selectedOption()}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent />
+                  </Select>
+                </>
+              )}
+            </For>
 
-        {/* <div
-          style={{
-            display: "flex",
-            "flex-flow": "column",
-            "align-items": "center",
-          }}
-        >
-          <h1>Select Animation</h1>
-          <For each={activeActionAnims()} fallback={<Loading />}>
-            {(anim, i) => (
-              <button
-                style={{ width: "80%", height: "3rem" }}
-                onClick={anim.callback}
-              >
-                {anim.name}
-              </button>
-            )}
-          </For>
-        </div> */}
+            <Button
+              class="mt-4 w-full"
+              onClick={() => {
+                console.log(attribs);
+                const activeActionAnims = activeActionAnimsS();
+                if (activeActionAnims)
+                  activeActionAnims[activeActionAnims.length - 1].callback();
+              }}
+            >
+              Show
+            </Button>
+          </CardContent>
+        </Card>
       </div>
+
       <Animation {...modelAnim()} />
     </div>
   );
