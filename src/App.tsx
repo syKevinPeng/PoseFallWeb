@@ -1,4 +1,4 @@
-import { createMemo, createSignal, For, Index, untrack } from "solid-js";
+import { createEffect, createMemo, createSignal, For } from "solid-js";
 import { Loader2 } from "lucide-solid";
 
 import {
@@ -11,7 +11,8 @@ import {
 
 import {
   Animation,
-  activeActionAnims as activeActionAnimsS,
+  activeActionAnim as activeActionAnimsS,
+  setAnimsUrl,
 } from "./Animation";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,12 +28,12 @@ const modelAnims = [
   {
     name: "SMPL Male",
     model: "fbx_files/male_model.fbx",
-    anims: ["fbx_files/test_animation.fbx"],
+    // anims: ["fbx_files/test_animation.fbx"],
   },
   {
     name: "SMPL Female",
     model: "fbx_files/female_model.fbx",
-    anims: ["fbx_files/test_animation.fbx"],
+    // anims: ["fbx_files/test_animation.fbx"],
   },
 ];
 
@@ -320,7 +321,45 @@ export function App() {
         }
       | undefined;
 
+  //
+  //
+  //
+  //
+  //
+
+  const filteredFbx = createMemo(() => {
+    const currAttribs = attribs();
+    if (
+      currAttribs != null &&
+      Object.keys(dropDownMenuList).every((x) =>
+        Object.keys(currAttribs).includes(x)
+      )
+    ) {
+      return fbxDb.filter((fbx) =>
+        getFbxRegex(
+          currAttribs["Impact Location"],
+          currAttribs["Impact Attribute"],
+          currAttribs["Glitch Attribute"],
+          currAttribs["Fall Attribute"]
+        ).test(fbx)
+      );
+    }
+  });
+
+  //
+  //
+  //
+  //
+  //
+
   const [modelAnim, setModelAnim] = createSignal(modelAnims[0]);
+  const [loading, setLoading] = createSignal(false);
+
+  //
+  //
+  //
+  //
+  //
 
   return (
     <div
@@ -338,7 +377,7 @@ export function App() {
           <CardContent>
             <div class="flex flex-wrap">
               <For each={modelAnims} fallback={<Loading />}>
-                {(model, i) => (
+                {(model) => (
                   <div class="basis-1/2 p-1">
                     <Button
                       class="w-full"
@@ -397,6 +436,21 @@ export function App() {
               )}
             </For>
 
+            {/* <div class="flex gap-2">
+              <For each={filteredFbx() ?? []}>
+                {(fbx, i) => (
+                  <Button
+                    title={fbx}
+                    onClick={() => {
+                      setAnimsUrl(fbx);
+                    }}
+                  >
+                    {i() + 1}
+                  </Button>
+                )}
+              </For>
+            </div> */}
+
             <Button
               class="mt-4 w-full"
               disabled={
@@ -404,32 +458,25 @@ export function App() {
                 Object.keys(dropDownMenuList).length
               }
               onClick={() => {
-                const currAttribs = attribs();
-                if (currAttribs != null) {
-                  console.log(
-                    currAttribs,
-                    fbxDb.filter((fbx) =>
-                      getFbxRegex(
-                        currAttribs["Impact Location"],
-                        currAttribs["Impact Attribute"],
-                        currAttribs["Glitch Attribute"],
-                        currAttribs["Fall Attribute"]
-                      ).test(fbx)
-                    )
-                  );
-                  const activeActionAnims = activeActionAnimsS();
-                  if (activeActionAnims)
-                    activeActionAnims[activeActionAnims.length - 1].callback();
-                }
+                setLoading(true);
+                new Promise((resolve) => setTimeout(resolve, 2000))
+                  .then(() => {
+                    const fbx = filteredFbx();
+                    if (fbx != null && fbx.length > 0)
+                      setAnimsUrl(fbx[Math.floor(Math.random() * fbx.length)]);
+                  })
+                  .finally(() => {
+                    setLoading(false);
+                  });
               }}
             >
-              Show
+              {loading() ? <Loading /> : "Show"}
             </Button>
           </CardContent>
         </Card>
       </div>
 
-      <Animation {...modelAnim()} />
+      <Animation model={modelAnim().model} />
     </div>
   );
 }

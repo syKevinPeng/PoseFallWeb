@@ -7,14 +7,20 @@ import Stats from "three/examples/jsm/libs/stats.module";
 import { untrack } from "solid-js/web";
 import { CirclePause, CirclePlay } from "lucide-solid";
 
+//
+//
+//
+
 const [activeActionPaused, setActiveActionPaused] = createSignal(true);
-export const [activeActionAnims, setActiveActionAnims] = createSignal<
-  {
-    name: string;
-    anim: THREE.AnimationAction;
-    callback: () => void;
-  }[]
->([]);
+export const [activeActionAnim, setActiveActionAnim] = createSignal<{
+  // name: string;
+  anim: THREE.AnimationAction;
+  callback: () => void;
+}>();
+
+//
+//
+//
 
 const [activeAction, setActiveAction_] = createSignal<THREE.AnimationAction>();
 function setActiveAction(action?: THREE.AnimationAction) {
@@ -22,11 +28,27 @@ function setActiveAction(action?: THREE.AnimationAction) {
   setActiveActionPaused(action?.paused ?? true);
 }
 
-export function Animation(props: {
-  name: string;
-  model: string;
-  anims?: string[];
-}) {
+//
+//
+//
+
+export const [animsUrl_, setAnimsUrl] = createSignal<string>();
+
+//
+//
+//
+
+const fbxLoader: FBXLoader = new FBXLoader();
+let mixer: THREE.AnimationMixer | undefined;
+let lastAction: THREE.AnimationAction | undefined;
+let modelReady = false;
+const lastObjectsInScene: THREE.Object3D[] = [];
+
+//
+//
+//
+
+export function Animation(props: { model: string }) {
   const [time, setTime] = createSignal(0);
   const [duration, setDuration] = createSignal(0);
 
@@ -49,14 +71,14 @@ export function Animation(props: {
   //
   //
   createEffect(() => {
-    props.name; // do not remove
+    props.model; // do not remove
     setActiveAction();
-    setActiveActionAnims([]);
+    setActiveActionAnim();
   });
 
   //
   //
-  //
+  // handle anim time and duration
   createEffect(() => {
     const dur = activeAction()?.getClip().duration;
     if (dur != null && dur > 1) {
@@ -89,15 +111,52 @@ export function Animation(props: {
   //
   //
   //
+
+  function processAnimations(animation: THREE.AnimationClip) {
+    {
+      if (mixer == null) {
+        alert("Mixer not ready!!!!!");
+        throw new Error("Mixer not ready!!!!!");
+      }
+      // const propname =
+      //   name + (notes != null ? ` ${notes}` : "") + (i != 0 ? ` ${i + 1}` : "");
+      const animationAction = mixer.clipAction(animation);
+      setActiveActionAnim({
+        // name: propname,
+        anim: animationAction,
+        callback: () => {
+          setAction(animationAction);
+        },
+      });
+    }
+  }
+
+  function setAction(toAction: THREE.AnimationAction) {
+    if (!modelReady) {
+      alert("Model not ready!!!!!");
+      throw new Error("Model not ready!!!!!");
+    }
+
+    if (toAction != activeAction()) {
+      console.log(
+        `setAction: to=${toAction} active=${activeAction()} last=${lastAction}`
+      );
+      lastAction = activeAction();
+      setActiveAction(toAction);
+      lastAction?.fadeOut(1);
+      activeAction()?.reset();
+      activeAction()?.fadeIn(1);
+      activeAction()?.play();
+      // lastAction?.stop();
+    }
+  }
+
+  //
+  //
+  //
   createEffect(() => {
     if (rendererRef == null) return;
-    console.log(`Loading ${props.name}!`);
-
-    const lastObjectsInScene: THREE.Object3D[] = [];
-    let modelReady = false;
-
-    let mixer: THREE.AnimationMixer | undefined;
-    let lastAction: THREE.AnimationAction | undefined;
+    // console.log(`Loading ${props.name}!`);
 
     const scene = new THREE.Scene();
     scene.add(new THREE.AxesHelper(10));
@@ -124,6 +183,9 @@ export function Animation(props: {
     controls.enableDamping = true;
     controls.target.set(0, 1, 0);
 
+    //
+    //
+    //
     window.addEventListener("resize", () => onWindowResize(true), false);
     function onWindowResize(shouldRender: boolean) {
       const w = Math.min(
@@ -144,7 +206,7 @@ export function Animation(props: {
       if (shouldRender) render();
     }
 
-    addModelAnim(props);
+    addModelAnim(props.model);
 
     const clock = new THREE.Clock();
     function animate() {
@@ -169,15 +231,7 @@ export function Animation(props: {
       renderer.render(scene, camera);
     }
 
-    function addModelAnim({
-      name,
-      model,
-      anims,
-    }: {
-      name: string;
-      model: string;
-      anims?: string[];
-    }) {
+    function addModelAnim(model: string) {
       // gui.destroy();
       // gui = new GUI();
 
@@ -189,42 +243,13 @@ export function Animation(props: {
       mixer?.uncacheRoot(mixer.getRoot());
       mixer?.stopAllAction();
       untrack(() => {
-        activeActionAnims().forEach((x) => {
+        const x = activeActionAnim();
+        if (x != null) {
           x.anim.stop();
           mixer?.uncacheClip(x.anim.getClip());
           mixer?.uncacheAction(x.anim.getClip());
-        });
-      });
-
-      const fbxLoader: FBXLoader = new FBXLoader();
-
-      function processAnimations(
-        animation: THREE.AnimationClip,
-        i: number,
-        notes?: string
-      ) {
-        {
-          if (mixer == null) {
-            alert("Mixer not ready!!!!!");
-            throw new Error("Mixer not ready!!!!!");
-          }
-          const propname =
-            name +
-            (notes != null ? ` ${notes}` : "") +
-            (i != 0 ? ` ${i + 1}` : "");
-          const animationAction = mixer.clipAction(animation);
-          setActiveActionAnims((x) => [
-            ...x,
-            {
-              name: propname,
-              anim: animationAction,
-              callback: () => {
-                setAction(animationAction);
-              },
-            },
-          ]);
         }
-      }
+      });
 
       fbxLoader.load(
         model,
@@ -234,30 +259,28 @@ export function Animation(props: {
           object.scale.set(0.01, 0.01, 0.01);
           mixer = new THREE.AnimationMixer(object);
 
-          object.animations.map((anim, i) =>
-            processAnimations(anim, i, "Default")
-          );
+          object.animations.map((anim, i) => processAnimations(anim));
 
           lastObjectsInScene.push(object);
           scene.add(object);
 
-          for (const anim of anims ?? [])
-            fbxLoader.load(
-              anim,
-              (object) => {
-                if (!(object instanceof THREE.Object3D)) return;
+          // for (const anim of anims ?? [])
+          //   fbxLoader.load(
+          //     anim,
+          //     (object) => {
+          //       if (!(object instanceof THREE.Object3D)) return;
 
-                object.animations.map((anim, i) =>
-                  processAnimations(anim, i, "Anim")
-                );
+          //       object.animations.map((anim, i) =>
+          //         processAnimations(anim, i, "Anim")
+          //       );
 
-                lastObjectsInScene.push(object);
-              },
-              (xhr) => {
-                //   console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
-              },
-              console.error
-            );
+          //       lastObjectsInScene.push(object);
+          //     },
+          //     (xhr) => {
+          //       //   console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
+          //     },
+          //     console.error
+          //   );
 
           modelReady = true;
         },
@@ -267,26 +290,29 @@ export function Animation(props: {
         console.error
       );
     }
+  });
 
-    function setAction(toAction: THREE.AnimationAction) {
-      if (!modelReady) {
-        alert("Model not ready!!!!!");
-        throw new Error("Model not ready!!!!!");
-      }
+  createEffect(() => {
+    modelReady = false;
+    const animsUrl = animsUrl_();
+    if (animsUrl != null)
+      fbxLoader.load(
+        animsUrl,
+        (object) => {
+          if (!(object instanceof THREE.Object3D)) return;
 
-      if (toAction != activeAction()) {
-        console.log(
-          `setAction: to=${toAction} active=${activeAction()} last=${lastAction}`
-        );
-        lastAction = activeAction();
-        setActiveAction(toAction);
-        lastAction?.fadeOut(1);
-        activeAction()?.reset();
-        activeAction()?.fadeIn(1);
-        activeAction()?.play();
-        // lastAction?.stop();
-      }
-    }
+          object.animations.map((anim) => processAnimations(anim));
+
+          lastObjectsInScene.push(object);
+
+          modelReady = true;
+          activeActionAnim()?.callback();
+        },
+        (xhr) => {
+          //   console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
+        },
+        console.error
+      );
   });
 
   return (
