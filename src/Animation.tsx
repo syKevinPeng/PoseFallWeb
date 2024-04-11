@@ -102,10 +102,11 @@ export function Animation(props: { model: string }) {
       };
       //
       //
-    } else {
-      setDuration(0);
-      setTime(0);
     }
+
+    //else
+    setDuration(0);
+    setTime(0);
   });
 
   //
@@ -137,7 +138,7 @@ export function Animation(props: { model: string }) {
       throw new Error("Model not ready!!!!!");
     }
 
-    if (toAction != activeAction()) {
+    if (toAction !== activeAction()) {
       console.log(
         `setAction: to=${toAction} active=${activeAction()} last=${lastAction}`
       );
@@ -189,11 +190,11 @@ export function Animation(props: { model: string }) {
     window.addEventListener("resize", () => onWindowResize(true), false);
     function onWindowResize(shouldRender: boolean) {
       const w = Math.min(
-        rendererRef?.clientWidth ?? Infinity,
+        rendererRef?.clientWidth ?? Number.POSITIVE_INFINITY,
         document.body.clientWidth
       );
       const h = Math.min(
-        rendererRef?.clientHeight ?? Infinity,
+        rendererRef?.clientHeight ?? Number.POSITIVE_INFINITY,
         document.body.clientHeight
       );
       // console.log("w", w, "h", h);
@@ -235,9 +236,8 @@ export function Animation(props: { model: string }) {
       // gui.destroy();
       // gui = new GUI();
 
-      lastObjectsInScene.forEach((x) => {
-        scene.remove(x);
-      });
+      for (const x of lastObjectsInScene) scene.remove(x);
+
       lastObjectsInScene.length = 0;
 
       mixer?.uncacheRoot(mixer.getRoot());

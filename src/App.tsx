@@ -412,7 +412,7 @@ export function App() {
                     class="w-full h-12 text-center"
                     onChange={(x) => {
                       setAttribs((att) =>
-                        att?.[attribName] == x
+                        att?.[attribName] === x
                           ? att
                           : {
                               ...att,
