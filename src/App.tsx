@@ -30,10 +30,14 @@ const modelAnims = [
     model: "fbx_files/male_model.fbx",
     // anims: ["fbx_files/test_animation.fbx"],
   },
+  // {
+  //   name: "SMPL Female",
+  //   model: "fbx_files/female_model.fbx",
+  //   // anims: ["fbx_files/test_animation.fbx"],
+  // },
   {
-    name: "SMPL Female",
-    model: "fbx_files/female_model.fbx",
-    // anims: ["fbx_files/test_animation.fbx"],
+    name: "SMPL Kate",
+    model: "fbx_files/SMPL-Kate.fbx",
   },
 ];
 
@@ -372,7 +376,7 @@ export function App() {
       <div class="min-w-[22rem] basis-1/5 p-3 [&_h1]:font-bold [&_h1]:text-3xl [&_h1]:text-center">
         <Card>
           <CardHeader>
-            <CardTitle>Select Models</CardTitle>
+            <CardTitle class="font-bold">Select Models</CardTitle>
           </CardHeader>
           <CardContent>
             <div class="flex flex-wrap">
@@ -396,7 +400,7 @@ export function App() {
 
         <Card class="mt-3">
           <CardHeader>
-            <CardTitle>Select Attributes</CardTitle>
+            <CardTitle class="font-bold">Select Attributes</CardTitle>
             {/* <CardDescription>Card Description</CardDescription> */}
           </CardHeader>
           <CardContent>
