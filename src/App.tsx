@@ -234,94 +234,107 @@ const fbxDb = [
   "animations/0082_Impact_loc_Head-Impact_attr_Contraction-Glitch_attr_freeze-Fall_Attribute_surrender_sequences_1.fbx",
 ];
 
+function getFbxRegex(
+  il?: string | null,
+  ia?: string | null,
+  ga?: string | null,
+  fa?: string | null
+) {
+  const matchAll = "[a-zA-Z ]+";
+  return new RegExp(
+    `${il ?? matchAll}-Impact_attr_${ia ?? matchAll}-Glitch_attr_${
+      ga ?? matchAll
+    }-Fall_Attribute_${fa ?? matchAll}`,
+    "i"
+  );
+}
+
+const getAvailableIL = (
+  currAttribs: { [key: string]: string | null } | undefined
+) =>
+  ["Head", "Torso", "Legs", "Arms"].filter((x) =>
+    fbxDb.some((fbx) =>
+      getFbxRegex(
+        x,
+        currAttribs?.["Impact Attribute"],
+        currAttribs?.["Glitch Attribute"],
+        currAttribs?.["Fall Attribute"]
+      ).test(fbx)
+    )
+  );
+
+const getAvailableIA = (
+  currAttribs: { [key: string]: string | null } | undefined
+) =>
+  ["Prick", "Contraction", "Explosion", "Shot", "Push"].filter((x) =>
+    fbxDb.some((fbx) =>
+      getFbxRegex(
+        currAttribs?.["Impact Location"],
+        x,
+        currAttribs?.["Glitch Attribute"],
+        currAttribs?.["Fall Attribute"]
+      ).test(fbx)
+    )
+  );
+
+const getAvailableGA = (
+  currAttribs: { [key: string]: string | null } | undefined
+) =>
+  [
+    "Shake",
+    "Fail",
+    "Flash",
+    "Stutter",
+    "Short",
+    "Contort",
+    "Stumble",
+    "Spin",
+    "Freeze",
+  ].filter((x) =>
+    fbxDb.some((fbx) =>
+      getFbxRegex(
+        currAttribs?.["Impact Location"],
+        currAttribs?.["Impact Attribute"],
+        x,
+        currAttribs?.["Fall Attribute"]
+      ).test(fbx)
+    )
+  );
+
+const getAvailableFA = (
+  currAttribs: { [key: string]: string | null } | undefined
+) =>
+  ["Release", "Let go", "Hinge", "Surrender", "Suspend"].filter((x) =>
+    fbxDb.some((fbx) =>
+      getFbxRegex(
+        currAttribs?.["Impact Location"],
+        currAttribs?.["Impact Attribute"],
+        currAttribs?.["Glitch Attribute"],
+        x
+      ).test(fbx)
+    )
+  );
+
 export function App() {
   const [attribs_, setAttribs] = createSignal<{
-    [key: string]: string;
+    [key: string]: string | null;
   }>();
 
-  function getFbxRegex(il?: string, ia?: string, ga?: string, fa?: string) {
-    const matchAll = "[a-zA-Z ]+";
-    return new RegExp(
-      `${il ?? matchAll}-Impact_attr_${ia ?? matchAll}-Glitch_attr_${
-        ga ?? matchAll
-      }-Fall_Attribute_${fa ?? matchAll}`,
-      "i"
-    );
-  }
+  // createEffect(() => {
+  //   console.log("effect:", attribs_());
+  // });
 
   const dropDownMenuList = {
-    "Impact Location": createMemo(() =>
-      ["Head", "Torso", "Legs", "Arms"].filter((x) => {
-        // console.log("Impact Location memo", x);
-        const currAttribs = attribs_();
-        return fbxDb.some((fbx) =>
-          getFbxRegex(
-            x,
-            currAttribs?.["Impact Attribute"],
-            currAttribs?.["Glitch Attribute"],
-            currAttribs?.["Fall Attribute"]
-          ).test(fbx)
-        );
-      })
-    ),
-    "Impact Attribute": createMemo(() =>
-      ["Prick", "Contraction", "Explosion", "Shot", "Push"].filter((x) => {
-        // console.log("Impact Attribute memo", x);
-        const currAttribs = attribs_();
-        return fbxDb.some((fbx) =>
-          getFbxRegex(
-            currAttribs?.["Impact Location"],
-            x,
-            currAttribs?.["Glitch Attribute"],
-            currAttribs?.["Fall Attribute"]
-          ).test(fbx)
-        );
-      })
-    ),
-    "Glitch Attribute": createMemo(() =>
-      [
-        "Shake",
-        "Fail",
-        "Flash",
-        "Stutter",
-        "Short",
-        "Contort",
-        "Stumble",
-        "Spin",
-        "Freeze",
-      ].filter((x) => {
-        // console.log("Glitch Attribute memo", x);
-        const currAttribs = attribs_();
-        return fbxDb.some((fbx) =>
-          getFbxRegex(
-            currAttribs?.["Impact Location"],
-            currAttribs?.["Impact Attribute"],
-            x,
-            currAttribs?.["Fall Attribute"]
-          ).test(fbx)
-        );
-      })
-    ),
-    "Fall Attribute": createMemo(() =>
-      ["Release", "Let go", "Hinge", "Surrender", "Suspend"].filter((x) => {
-        // console.log("Fall Attribute memo", x);
-        const currAttribs = attribs_();
-        return fbxDb.some((fbx) =>
-          getFbxRegex(
-            currAttribs?.["Impact Location"],
-            currAttribs?.["Impact Attribute"],
-            currAttribs?.["Glitch Attribute"],
-            x
-          ).test(fbx)
-        );
-      })
-    ),
+    "Impact Location": createMemo(() => getAvailableIL(attribs_())),
+    "Impact Attribute": createMemo(() => getAvailableIA(attribs_())),
+    "Glitch Attribute": createMemo(() => getAvailableGA(attribs_())),
+    "Fall Attribute": createMemo(() => getAvailableFA(attribs_())),
   };
 
   const attribs = () =>
     attribs_() as
       | {
-          [K in keyof typeof dropDownMenuList]: string;
+          [K in keyof typeof dropDownMenuList]: string | null;
         }
       | undefined;
 
@@ -410,6 +423,9 @@ export function App() {
                   <div class="py-1 text-sm font-medium">{attribName}</div>
                   <Select
                     class="w-full h-12 text-center"
+                    value={
+                      attribs()?.[attribName as keyof typeof dropDownMenuList]
+                    }
                     onChange={(x) => {
                       setAttribs((att) =>
                         att?.[attribName] === x
@@ -467,7 +483,7 @@ export function App() {
                   .then(() => {
                     const fbx = filteredFbx();
                     if (fbx != null && fbx.length > 0)
-                      setAnimsUrl(fbx[Math.floor(Math.random() * fbx.length)]);
+                      setAnimsUrl(shuffle(fbx));
                   })
                   .finally(() => {
                     setLoading(false);
@@ -476,6 +492,47 @@ export function App() {
             >
               {loading() ? <Loading /> : "Show"}
             </Button>
+            <div class="flex gap-x-2 [&>button:active]:scale-95">
+              <Button
+                class="mt-4 flex-1"
+                variant="destructive"
+                disabled={Object.keys(attribs() ?? {}).length === 0}
+                onClick={() => {
+                  setAttribs(() => undefined);
+                }}
+              >
+                Reset
+              </Button>
+              <Button
+                class="mt-4 flex-1"
+                variant="outline"
+                onClick={() => {
+                  const shuffledAttribs: ReturnType<typeof attribs> = {
+                    "Impact Location": null,
+                    "Impact Attribute": null,
+                    "Glitch Attribute": null,
+                    "Fall Attribute": null,
+                  };
+                  shuffledAttribs["Impact Location"] = shuffle(
+                    getAvailableIL(shuffledAttribs)
+                  );
+                  shuffledAttribs["Impact Attribute"] = shuffle(
+                    getAvailableIA(shuffledAttribs)
+                  );
+                  shuffledAttribs["Glitch Attribute"] = shuffle(
+                    getAvailableGA(shuffledAttribs)
+                  );
+                  shuffledAttribs["Fall Attribute"] = shuffle(
+                    getAvailableFA(shuffledAttribs)
+                  );
+                  // console.log("shuffledAttribs", shuffledAttribs);
+                  setAttribs(shuffledAttribs);
+                }}
+              >
+                Shuffle
+              </Button>
+            </div>
+            {/*  */}
           </CardContent>
         </Card>
       </div>
@@ -486,3 +543,5 @@ export function App() {
 }
 
 const Loading = () => <Loader2 class="animate-spin" />;
+
+const shuffle = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
