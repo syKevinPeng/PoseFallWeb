@@ -25,6 +25,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { isDev } from "solid-js/web";
 
 const modelAnims = [
   // {
@@ -322,10 +323,6 @@ export function App() {
     [key: string]: string | null;
   }>();
 
-  // createEffect(() => {
-  //   console.log("effect:", attribs_());
-  // });
-
   const dropDownMenuList = {
     "Impact Location": createMemo(() => getAvailableIL(attribs_())),
     "Impact Attribute": createMemo(() => getAvailableIA(attribs_())),
@@ -339,6 +336,11 @@ export function App() {
       }
     | undefined
   >;
+
+  if (isDev)
+    createEffect(() => {
+      console.log("effect:attribs", attribs());
+    });
 
   //
   //
@@ -477,20 +479,22 @@ export function App() {
               class="mt-4 w-full"
               disabled={
                 loading() ||
-                Object.keys(attribs() ?? {}).length <
-                  Object.keys(dropDownMenuList).length
+                attribs() == null ||
+                Object.values(attribs() ?? {}).some((x) => x == null)
               }
               onClick={() => {
-                setLoading(true);
-                new Promise((resolve) => setTimeout(resolve, 2000))
-                  .then(() => {
-                    const fbx = filteredFbx();
-                    if (fbx != null && fbx.length > 0)
+                const fbx = filteredFbx();
+                if (fbx != null && fbx.length > 0) {
+                  if (isDev) console.log("Choosing fbx from", fbx);
+                  setLoading(true);
+                  new Promise((resolve) => setTimeout(resolve, 2000))
+                    .then(() => {
                       setAnimsUrl(shuffle(fbx));
-                  })
-                  .finally(() => {
-                    setLoading(false);
-                  });
+                    })
+                    .finally(() => {
+                      setLoading(false);
+                    });
+                }
               }}
             >
               {loading() ? <Loading /> : "Show"}

@@ -4,7 +4,7 @@ import { createEffect, createSignal, onCleanup } from "solid-js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
 import Stats from "three/examples/jsm/libs/stats.module";
-import { untrack } from "solid-js/web";
+import { isDev, untrack } from "solid-js/web";
 import { CirclePause, CirclePlay } from "lucide-solid";
 
 //
@@ -139,9 +139,10 @@ export function Animation(props: { model: string }) {
     }
 
     if (toAction !== activeAction()) {
-      console.log(
-        `setAction: to=${toAction} active=${activeAction()} last=${lastAction}`
-      );
+     if (isDev)
+       console.log(
+         `setAction: to=${toAction} active=${activeAction()} last=${lastAction}`
+       );
       lastAction = activeAction();
       setActiveAction(toAction);
       lastAction?.fadeOut(1);
