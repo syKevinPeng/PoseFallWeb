@@ -8,6 +8,12 @@ Dev mode:
 pnpm dev
 ```
 
+Build for dist
+
+```bash
+pnpm build
+```
+
 Deploy on github page
 
 ```bash

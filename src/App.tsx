@@ -25,11 +25,11 @@ import {
 } from "@/components/ui/card";
 
 const modelAnims = [
-  {
-    name: "SMPL Male",
-    model: "fbx_files/male_model.fbx",
-    // anims: ["fbx_files/test_animation.fbx"],
-  },
+  // {
+  //   name: "SMPL Male",
+  //   model: "fbx_files/male_model.fbx",
+  //   // anims: ["fbx_files/test_animation.fbx"],
+  // },
   // {
   //   name: "SMPL Female",
   //   model: "fbx_files/female_model.fbx",
