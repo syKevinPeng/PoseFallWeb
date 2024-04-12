@@ -496,7 +496,9 @@ export function App() {
               <Button
                 class="mt-4 flex-1"
                 variant="destructive"
-                disabled={Object.keys(attribs() ?? {}).length === 0}
+                disabled={Object.values(attribs() ?? {}).every(
+                  (x) => x == null
+                )}
                 onClick={() => {
                   setAttribs(() => undefined);
                 }}
