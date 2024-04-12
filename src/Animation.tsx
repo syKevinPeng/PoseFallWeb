@@ -160,19 +160,19 @@ export function Animation(props: { model: string }) {
     // console.log(`Loading ${props.name}!`);
 
     const scene = new THREE.Scene();
-    scene.add(new THREE.AxesHelper(10));
+    // scene.add(new THREE.AxesHelper(10));
 
     const light = new THREE.PointLight(0xffffff, 500);
     light.position.set(2.5, 7.5, 15);
     scene.add(light);
 
     const camera = new THREE.PerspectiveCamera(
-      75,
+      50,
       window.innerWidth / window.innerHeight,
       0.1,
       1000
     );
-    camera.position.set(0.8, 1.4, 1.0);
+    camera.position.set(0, 0, 5);
 
     const renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -182,7 +182,7 @@ export function Animation(props: { model: string }) {
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.target.set(0, 1, 0);
+    controls.target.set(0, 0, 0);
 
     //
     //
