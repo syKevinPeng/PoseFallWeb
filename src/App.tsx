@@ -385,6 +385,7 @@ export function App() {
         height: "100vh",
         display: "flex",
       }}
+      class=" [&_button:active]:scale-95"
     >
       <div class="min-w-[22rem] basis-1/5 p-3 [&_h1]:font-bold [&_h1]:text-3xl [&_h1]:text-center">
         <Card>
@@ -474,8 +475,9 @@ export function App() {
             <Button
               class="mt-4 w-full"
               disabled={
+                loading() ||
                 Object.keys(attribs() ?? {}).length <
-                Object.keys(dropDownMenuList).length
+                  Object.keys(dropDownMenuList).length
               }
               onClick={() => {
                 setLoading(true);
@@ -492,7 +494,7 @@ export function App() {
             >
               {loading() ? <Loading /> : "Show"}
             </Button>
-            <div class="flex gap-x-2 [&>button:active]:scale-95">
+            <div class="flex gap-x-2">
               <Button
                 class="mt-4 flex-1"
                 variant="destructive"
