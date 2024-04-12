@@ -487,7 +487,9 @@ export function App() {
                 if (fbx != null && fbx.length > 0) {
                   if (isDev) console.log("Choosing fbx from", fbx);
                   setLoading(true);
-                  new Promise((resolve) => setTimeout(resolve, 2000))
+                  new Promise((resolve) =>
+                    setTimeout(resolve, 500 + Math.random() * 2000)
+                  )
                     .then(() => {
                       setAnimsUrl(shuffle(fbx));
                     })
