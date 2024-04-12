@@ -8,21 +8,21 @@ Dev mode:
 pnpm dev
 ```
 
-Build for dist
+Build for production
 
 ```bash
-pnpm build
+pnpm build && zip -9 -r "dist__$(date +'%Y-%m-%d_%H-%M-%S').zip" dist/
 ```
 
-Deploy on github page
+<!-- Deploy on github page
 
 ```bash
 pnpm deploy-gh
-```
+``` -->
 
 ## How to Run (Production)
 
-Assuming you have `dist/` folder ready, and your current working directory is inside `dist/`.
+Assuming your current working directory is inside `dist/` folder.
 
 ```sh
 python3 -mhttp.server 8080
