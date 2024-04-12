@@ -1,4 +1,10 @@
-import { createEffect, createMemo, createSignal, For } from "solid-js";
+import {
+  type Accessor,
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+} from "solid-js";
 import { Loader2 } from "lucide-solid";
 
 import {
@@ -9,11 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import {
-  Animation,
-  activeActionAnim as activeActionAnimsS,
-  setAnimsUrl,
-} from "./Animation";
+import { Animation, setAnimsUrl } from "./Animation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -331,12 +333,12 @@ export function App() {
     "Fall Attribute": createMemo(() => getAvailableFA(attribs_())),
   };
 
-  const attribs = () =>
-    attribs_() as
-      | {
-          [K in keyof typeof dropDownMenuList]: string | null;
-        }
-      | undefined;
+  const attribs = attribs_ as Accessor<
+    | {
+        [K in keyof typeof dropDownMenuList]: string | null;
+      }
+    | undefined
+  >;
 
   //
   //
@@ -385,7 +387,6 @@ export function App() {
         height: "100vh",
         display: "flex",
       }}
-      class=" [&_button:active]:scale-95"
     >
       <div class="min-w-[22rem] basis-1/5 p-3 [&_h1]:font-bold [&_h1]:text-3xl [&_h1]:text-center">
         <Card>
