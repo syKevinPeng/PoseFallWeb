@@ -510,6 +510,7 @@ export function App() {
                 )}
                 onClick={() => {
                   setAttribs(() => undefined);
+                  setModelAnim((x) => ({ ...x }));
                 }}
               >
                 Reset
